@@ -10,6 +10,7 @@ public class CurrencyService:ICurrencyService
     {
         _connectionString = connectionString;
     }
+    
 
     public void CreateOrUpdate(string CurrencyName, float CurrencyRate, List<string> CountryList)
 {
