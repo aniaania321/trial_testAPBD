@@ -1,5 +1,4 @@
-﻿using System.Xml.Schema;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using Model;
 
 namespace Logic;
@@ -21,6 +20,20 @@ public class CurrencyService:ICurrencyService
         Country country = new Country(countryString);
         Countries.Add(country);
     }
+
+    int id = -1;
+    id = getCurrencyId(CurrencyName);
+    if (id != -1)
+    {
+        string deletequery = "DELETE FROM currency_country WHERE currency_Id = @id;DELETE FROM currency WHERE id = @id;";
+        SqlConnection conn = new SqlConnection(_connectionString);
+        conn.Open();
+        SqlCommand cmd = new SqlCommand(deletequery, conn);
+        cmd.Parameters.AddWithValue("@id", id);
+        cmd.ExecuteNonQuery();
+        conn.Close();
+    }
+
 
     Currency newCurrency = new Currency(CurrencyName, CurrencyRate);
     int currency_Id = 0;
@@ -80,7 +93,7 @@ public class CurrencyService:ICurrencyService
 
     public string SearchByCountry(string countryName)
     {
-        int country_Id = getCountryId(countryName); // zakładam że to działa i zwraca ID
+        int country_Id = getCountryId(countryName);
 
         string query = @"
         SELECT c.Name, c.Rate 
@@ -118,7 +131,60 @@ public class CurrencyService:ICurrencyService
 
         return countryName + "; "+result;
     }
+    
+    public string SearchByCurrency(string CurrencyName)
+    {
+        int currency_id=getCurrencyId(CurrencyName);
+        string query= @"SELECT c.Name FROM Country c JOIN Currency_Country cc ON c.ID=cc.Country_Id WHERE Currency_Id=@CurrencyId";
+        List<Country> countries = new List<Country>();
+        
+        using (SqlConnection connection = new SqlConnection(_connectionString))
+        using (SqlCommand command = new SqlCommand(query, connection))
+        {
+            command.Parameters.AddWithValue("@CurrencyId", currency_id);
+            connection.Open();
 
+            using (SqlDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    string countryName = reader.GetString(0);
+
+                    countries.Add(new Country(countryName));
+                }
+            }
+        }
+        string result = "";
+        foreach (var country in countries)
+        {
+            result = result + country.Name;
+        }
+        return result;
+        
+    }
+
+    public void DeleteCurrency(string CurrencyName)
+    {
+        int currency_id = getCurrencyId(CurrencyName);
+        string deletequery = "DELETE FROM currency_country WHERE currency_Id = @id;DELETE FROM currency WHERE id = @id;";
+        SqlConnection conn = new SqlConnection(_connectionString);
+        conn.Open();
+        SqlCommand cmd = new SqlCommand(deletequery, conn);
+        cmd.Parameters.AddWithValue("@id", currency_id);
+        cmd.ExecuteNonQuery();
+        conn.Close();
+    }
+    public void DeleteCountry(string CountryName)
+    {
+        int country_id = getCountryId(CountryName);
+        string deletequery = "DELETE FROM currency_country WHERE country_Id = @id;DELETE FROM country WHERE id = @id;";
+        SqlConnection conn = new SqlConnection(_connectionString);
+        conn.Open();
+        SqlCommand cmd = new SqlCommand(deletequery, conn);
+        cmd.Parameters.AddWithValue("@id", country_id);
+        cmd.ExecuteNonQuery();
+        conn.Close();
+    }
 
     public int getCountryId(string CountryName)
     {
@@ -137,16 +203,16 @@ public class CurrencyService:ICurrencyService
             }
         }
         return country_Id;
-        
     }
     public int getCurrencyId(string CurrencyName)
     {
-        string query = "SELECT Id FROM Currency WHERE Currency Name=@CurrencyName";
+        string query = "SELECT Id FROM Currency WHERE Name=@CurrencyName";
         int currency_Id = -1;
         using (SqlConnection connection = new SqlConnection(_connectionString))
         {
             SqlCommand command = new SqlCommand(query, connection);
             connection.Open();
+            command.Parameters.AddWithValue("@CurrencyName", CurrencyName);
             using SqlDataReader reader = command.ExecuteReader();
 
             while (reader.Read())
@@ -156,10 +222,5 @@ public class CurrencyService:ICurrencyService
         }
         return currency_Id;
         
-    }
-
-    public string SearchByCurrency(string CurrencyName)
-    {
-        throw new NotImplementedException();
     }
 }

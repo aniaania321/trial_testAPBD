@@ -26,11 +26,35 @@ app.MapPost("/api/currency/{currencyName}/{rate}/{countries}",
         return Results.Ok("Currency created or updated!");
     });
 
-app.MapGet("/api/currency/{countryName}",
-    (ICurrencyService currencyService, string countryName) =>
+app.MapGet("/api/currency/{type}",
+    (ICurrencyService currencyService, string type,string? countryName, string? currencyName) =>
     {
-        var result=currencyService.SearchByCountry(countryName);
-        return Results.Ok(result);
+        if (type=="ByCountry")
+        {
+            var result=currencyService.SearchByCountry(countryName);
+            return Results.Ok(result);
+        }
+        else if (type=="ByCurrency")
+        {
+            var result=currencyService.SearchByCurrency(currencyName);
+            return Results.Ok(result);
+        }
+        return Results.BadRequest();
+    });
+app.MapDelete("/api/currency/{type}",
+    (ICurrencyService currencyService, string type,string? countryName, string? currencyName) =>
+    {
+        if (type=="Country")
+        {
+            currencyService.DeleteCountry(countryName);
+            return Results.Ok("Deleted country");
+        }
+        else if (type=="Currency")
+        {
+            currencyService.DeleteCurrency(currencyName);
+            return Results.Ok("Deleted currency");
+        }
+        return Results.BadRequest();
     });
 
 app.Run();
