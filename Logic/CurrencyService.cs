@@ -18,7 +18,8 @@ public class CurrencyService:ICurrencyService
     for (int i = 0; i < CountryList.Count; i++)
     {
         string countryString = CountryList[i];
-        Country country = new Country(countryString);
+        Country country = new Country();
+        country.Name = CountryList[i];
         Countries.Add(country);
     }
 
@@ -36,7 +37,9 @@ public class CurrencyService:ICurrencyService
     }
 
 
-    Currency newCurrency = new Currency(CurrencyName, CurrencyRate);
+    Currency newCurrency = new Currency();
+    newCurrency.Name = CurrencyName;
+    newCurrency.Rate = CurrencyRate;
     int currency_Id = 0;
 
     string queryString = "INSERT INTO Currency(Name, Rate) VALUES(@CurrencyName, @CurrencyRate); SELECT CAST(SCOPE_IDENTITY() as int);";
@@ -116,8 +119,11 @@ public class CurrencyService:ICurrencyService
                 {
                     string currencyName = reader.GetString(0);
                     float currencyRate = reader.GetFloat(1);
-
-                    currencies.Add(new Currency(currencyName, currencyRate));
+                    Currency newCurrency = new Currency();
+                    newCurrency.Name = currencyName;
+                    newCurrency.Rate = currencyRate;
+                    
+                    currencies.Add(newCurrency);
                 }
             }
         }
@@ -150,8 +156,11 @@ public class CurrencyService:ICurrencyService
                 while (reader.Read())
                 {
                     string countryName = reader.GetString(0);
+                    Country country = new Country();
+                    country.Name = countryName;
 
-                    countries.Add(new Country(countryName));
+                    countries.Add(country);
+                    
                 }
             }
         }
@@ -203,6 +212,9 @@ public class CurrencyService:ICurrencyService
                 country_Id = reader.GetInt32(0);
             }
         }
+        if (country_Id == -1)
+            throw new NotFoundException($"Country '{CountryName}' not found in the database.");// tutaj go wyrzucam jak nie znajdę w bazie
+        
         return country_Id;
     }
     public int getCurrencyId(string CurrencyName)
@@ -221,7 +233,9 @@ public class CurrencyService:ICurrencyService
                 currency_Id = reader.GetInt32(0);
             }
         }
-        return currency_Id;
+        if (currency_Id == -1)
+            throw new NotFoundException($"Country '{CurrencyName}' not found in the database.");
         
+        return currency_Id;
     }
 }
